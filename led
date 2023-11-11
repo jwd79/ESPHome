@@ -1,0 +1,77 @@
+esphome:
+  name: led
+  friendly_name: led
+
+esp8266:
+  board: nodemcu
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "3ltIkRrfYXPogOaPmv6CEhTpMEKrsypaKK898pdvcFw="
+
+ota:
+  password: "5b4dd0e7e0dec4d25fa1cbc3c12078fc"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Led Fallback Hotspot"
+    password: "961PPB4Ug9TN"
+
+captive_portal:
+# Example configuration entry
+
+sensor:
+  - platform: adc
+    pin: A0
+    name: "Büro Brightness"
+    update_interval: 10s
+    unit_of_measurement: "%"
+    id: adc_light
+    filters:
+      - calibrate_linear:
+        - 0.0 -> 0.0
+        - 0.5 -> 60.0
+        - 1.0 -> 100.0
+  ## pulse pro minute
+  - platform: pulse_counter
+    pin: D2
+    name: "Pulse Counter"
+    unit_of_measurement: 'kW'
+    filters:
+     - multiply: 0.06  # (60s/1000 pulses per kWh)
+    update_interval: 5s
+    id: pulse
+    # addiert
+    total:
+      unit_of_measurement: 'Wh'
+      name: 'gesamt Wh'
+
+# Example configuration entry integration
+  - platform: integration
+    name: "Total Daily Energy"
+    sensor: pulse
+    time_unit: h
+# Example configuration entry
+binary_sensor:
+  - platform: template
+    name: "Büro hell"
+    lambda: |-
+      if (id(adc_light).state > 70) {
+        return true;
+      } else {
+        return false;
+      }
+    device_class: light
+# Gas Impulssensor
+  - platform: gpio
+    pin: D1
+    name: "Gas"
+    id: gas_impuls_geber
